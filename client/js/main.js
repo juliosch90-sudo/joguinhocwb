@@ -2,13 +2,35 @@
 let game = null;
 
 window.addEventListener('DOMContentLoaded', () => {
+  console.log('DOMContentLoaded event fired');
+
   const loginScreen = document.getElementById('login-screen');
   const gameScreen = document.getElementById('game-screen');
   const loadingScreen = document.getElementById('loading-screen');
   const joinBtn = document.getElementById('join-btn');
   const characterNameInput = document.getElementById('character-name');
 
+  console.log('Elements found:', {
+    loginScreen: !!loginScreen,
+    gameScreen: !!gameScreen,
+    loadingScreen: !!loadingScreen,
+    joinBtn: !!joinBtn,
+    characterNameInput: !!characterNameInput
+  });
+
+  // Test if input works
+  if (characterNameInput) {
+    characterNameInput.addEventListener('focus', () => {
+      console.log('Character name input focused');
+    });
+    characterNameInput.addEventListener('input', (e) => {
+      console.log('Character name input changed:', e.target.value);
+    });
+    console.log('Input event listeners attached');
+  }
+
   joinBtn.addEventListener('click', async () => {
+    console.log('Join button clicked');
     const characterName = characterNameInput.value.trim();
 
     if (!characterName || characterName.length < 3) {
