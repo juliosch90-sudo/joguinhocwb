@@ -58,6 +58,11 @@ class Game {
     this.scene = new BABYLON.Scene(this.engine);
     this.scene.clearColor = new BABYLON.Color3(0.5, 0.7, 1);
 
+    // Create temporary camera (will be replaced by player camera)
+    const tempCamera = new BABYLON.FreeCamera('tempCamera', new BABYLON.Vector3(0, 5, -10), this.scene);
+    tempCamera.setTarget(BABYLON.Vector3.Zero());
+    this.scene.activeCamera = tempCamera;
+
     // Lighting
     const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 1, 0), this.scene);
     light.intensity = 0.7;
@@ -100,6 +105,11 @@ class Game {
 
       // Create local player
       this.player = new PlayerController(this.scene, data.player);
+
+      // Set player camera as active
+      if (this.player.camera) {
+        this.scene.activeCamera = this.player.camera;
+      }
 
       // Update HUD
       this.hud.updatePlayerStats(data.player);
