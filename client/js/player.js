@@ -26,21 +26,25 @@ class PlayerController {
   }
 
   createPlayer() {
-    // Create simple capsule for player
-    this.mesh = BABYLON.MeshBuilder.CreateCapsule('player', {
-      height: 2,
-      radius: 0.5
-    }, this.scene);
+    // Create stylized character model
+    if (window.modelFactory) {
+      this.mesh = window.modelFactory.createPlayerCharacter(this.data.name, 'warrior');
+    } else {
+      // Fallback to simple capsule
+      this.mesh = BABYLON.MeshBuilder.CreateCapsule('player', {
+        height: 2,
+        radius: 0.5
+      }, this.scene);
+
+      const material = new BABYLON.StandardMaterial('playerMat', this.scene);
+      material.diffuseColor = new BABYLON.Color3(0, 1, 0);
+      material.emissiveColor = new BABYLON.Color3(0, 0.3, 0);
+      this.mesh.material = material;
+    }
 
     this.mesh.position.x = this.data.position.x;
-    this.mesh.position.y = 1;
+    this.mesh.position.y = 0;
     this.mesh.position.z = this.data.position.z;
-
-    // Player material
-    const material = new BABYLON.StandardMaterial('playerMat', this.scene);
-    material.diffuseColor = new BABYLON.Color3(0, 1, 0);
-    material.emissiveColor = new BABYLON.Color3(0, 0.3, 0);
-    this.mesh.material = material;
 
     // Name tag
     this.createNameTag();
@@ -272,18 +276,24 @@ class RemotePlayer {
   }
 
   createMesh() {
-    this.mesh = BABYLON.MeshBuilder.CreateCapsule(`player_${this.data.id}`, {
-      height: 2,
-      radius: 0.5
-    }, this.scene);
+    // Create stylized character model
+    if (window.modelFactory) {
+      this.mesh = window.modelFactory.createPlayerCharacter(`remote_${this.data.id}`, 'mage');
+    } else {
+      // Fallback
+      this.mesh = BABYLON.MeshBuilder.CreateCapsule(`player_${this.data.id}`, {
+        height: 2,
+        radius: 0.5
+      }, this.scene);
+
+      const material = new BABYLON.StandardMaterial(`playerMat_${this.data.id}`, this.scene);
+      material.diffuseColor = new BABYLON.Color3(0, 0.5, 1);
+      this.mesh.material = material;
+    }
 
     this.mesh.position.x = this.data.position.x;
-    this.mesh.position.y = 1;
+    this.mesh.position.y = 0;
     this.mesh.position.z = this.data.position.z;
-
-    const material = new BABYLON.StandardMaterial(`playerMat_${this.data.id}`, this.scene);
-    material.diffuseColor = new BABYLON.Color3(0, 0.5, 1);
-    this.mesh.material = material;
 
     this.createNameTag();
   }

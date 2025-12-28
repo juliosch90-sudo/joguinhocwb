@@ -11,62 +11,53 @@ class MonsterRenderer {
   }
 
   createMesh() {
-    // Different shapes based on monster name
-    let mesh;
+    // Use stylized models if available
     const name = this.data.name.toLowerCase();
+    let monsterType = 'slime';
 
-    if (name.includes('slime')) {
-      mesh = BABYLON.MeshBuilder.CreateSphere(`monster_${this.id}`, {
-        diameter: 1.5,
-        segments: 8
-      }, this.scene);
-
-      const material = new BABYLON.StandardMaterial(`monsterMat_${this.id}`, this.scene);
-      material.diffuseColor = new BABYLON.Color3(0, 1, 0.5);
-      material.emissiveColor = new BABYLON.Color3(0, 0.2, 0.1);
-      mesh.material = material;
-
-    } else if (name.includes('wolf')) {
-      mesh = BABYLON.MeshBuilder.CreateBox(`monster_${this.id}`, {
-        width: 1.2,
-        height: 1,
-        depth: 1.8
-      }, this.scene);
-
-      const material = new BABYLON.StandardMaterial(`monsterMat_${this.id}`, this.scene);
-      material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-      material.emissiveColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-      mesh.material = material;
-
+    if (name.includes('wolf')) {
+      monsterType = 'wolf';
     } else if (name.includes('orc')) {
-      mesh = BABYLON.MeshBuilder.CreateCylinder(`monster_${this.id}`, {
-        height: 2.5,
-        diameter: 1.5
-      }, this.scene);
-
-      const material = new BABYLON.StandardMaterial(`monsterMat_${this.id}`, this.scene);
-      material.diffuseColor = new BABYLON.Color3(0, 0.6, 0);
-      material.emissiveColor = new BABYLON.Color3(0, 0.1, 0);
-      mesh.material = material;
-
-    } else {
-      mesh = BABYLON.MeshBuilder.CreateBox(`monster_${this.id}`, {
-        size: 1.5
-      }, this.scene);
-
-      const material = new BABYLON.StandardMaterial(`monsterMat_${this.id}`, this.scene);
-      material.diffuseColor = new BABYLON.Color3(1, 0, 0);
-      mesh.material = material;
+      monsterType = 'orc';
     }
 
-    mesh.position.x = this.data.position.x;
-    mesh.position.y = 1;
-    mesh.position.z = this.data.position.z;
+    if (window.modelFactory) {
+      this.mesh = window.modelFactory.createMonster(`${this.id}`, monsterType);
+    } else {
+      // Fallback to simple shapes
+      let mesh;
+      if (monsterType === 'slime') {
+        mesh = BABYLON.MeshBuilder.CreateSphere(`monster_${this.id}`, {
+          diameter: 1.5,
+          segments: 8
+        }, this.scene);
+
+        const material = new BABYLON.StandardMaterial(`monsterMat_${this.id}`, this.scene);
+        material.diffuseColor = new BABYLON.Color3(0, 1, 0.5);
+        material.emissiveColor = new BABYLON.Color3(0, 0.2, 0.1);
+        mesh.material = material;
+      } else {
+        mesh = BABYLON.MeshBuilder.CreateBox(`monster_${this.id}`, {
+          size: 1.5
+        }, this.scene);
+
+        const material = new BABYLON.StandardMaterial(`monsterMat_${this.id}`, this.scene);
+        material.diffuseColor = new BABYLON.Color3(1, 0, 0);
+        mesh.material = material;
+      }
+      this.mesh = mesh;
+    }
+
+    this.mesh.position.x = this.data.position.x;
+    this.mesh.position.y = 0;
+    this.mesh.position.z = this.data.position.z;
 
     // Store monster reference on mesh for click detection
-    mesh.monster = this;
+    if (this.mesh.getChildMeshes) {
+      this.mesh.getChildMeshes().forEach(child => child.monster = this);
+    }
+    this.mesh.monster = this;
 
-    this.mesh = mesh;
     this.createNameTag();
     this.createHealthBar();
   }

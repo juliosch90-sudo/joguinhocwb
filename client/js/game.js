@@ -64,47 +64,133 @@ class Game {
 
   createScene() {
     this.scene = new BABYLON.Scene(this.engine);
-    this.scene.clearColor = new BABYLON.Color3(0.5, 0.7, 1);
+
+    // Initialize model factory
+    window.modelFactory = new ModelFactory(this.scene);
+
+    // Enhanced sky color (dawn/dusk atmosphere)
+    this.scene.clearColor = new BABYLON.Color3(0.6, 0.75, 0.9);
 
     // Create temporary camera (will be replaced by player camera)
     const tempCamera = new BABYLON.FreeCamera('tempCamera', new BABYLON.Vector3(0, 5, -10), this.scene);
     tempCamera.setTarget(BABYLON.Vector3.Zero());
     this.scene.activeCamera = tempCamera;
 
-    // Lighting
-    const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 1, 0), this.scene);
-    light.intensity = 0.7;
+    // Enhanced lighting for fantasy feel
+    const hemisphericLight = new BABYLON.HemisphericLight('hemispheric', new BABYLON.Vector3(0, 1, 0), this.scene);
+    hemisphericLight.intensity = 0.6;
+    hemisphericLight.groundColor = new BABYLON.Color3(0.3, 0.25, 0.2); // Warmer ground bounce
 
-    const dirLight = new BABYLON.DirectionalLight('dirLight', new BABYLON.Vector3(-1, -2, -1), this.scene);
-    dirLight.intensity = 0.5;
+    const dirLight = new BABYLON.DirectionalLight('dirLight', new BABYLON.Vector3(-0.5, -1, -0.5), this.scene);
+    dirLight.intensity = 0.7;
+    dirLight.diffuse = new BABYLON.Color3(1, 0.95, 0.8); // Warm sunlight
+    dirLight.specular = new BABYLON.Color3(0.5, 0.5, 0.4);
 
-    // Ground
+    // Enable shadows for depth
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024, dirLight);
+    shadowGenerator.useBlurExponentialShadowMap = true;
+    shadowGenerator.blurScale = 2;
+    this.shadowGenerator = shadowGenerator;
+
+    // Enhanced ground with texture
     const ground = BABYLON.MeshBuilder.CreateGround('ground', {
       width: 200,
       height: 200,
-      subdivisions: 10
+      subdivisions: 20
     }, this.scene);
 
     const groundMaterial = new BABYLON.StandardMaterial('groundMat', this.scene);
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.6, 0.3);
-    groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+
+    // Create procedural grass texture
+    const groundTexture = new BABYLON.DynamicTexture('groundTexture', 512, this.scene);
+    const ctx = groundTexture.getContext();
+
+    // Base grass color
+    ctx.fillStyle = '#4a7c3b';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Add variety with random dark/light patches
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const size = 20 + Math.random() * 40;
+      const shade = 0.8 + Math.random() * 0.4;
+      ctx.fillStyle = `rgb(${74 * shade}, ${124 * shade}, ${59 * shade})`;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    groundTexture.update();
+
+    groundMaterial.diffuseTexture = groundTexture;
+    groundMaterial.diffuseTexture.uScale = 20;
+    groundMaterial.diffuseTexture.vScale = 20;
+    groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+    groundMaterial.specularPower = 32;
     ground.material = groundMaterial;
+    ground.receiveShadows = true;
 
-    // Add grid texture
-    const gridTexture = new BABYLON.GridMaterial('gridMat', this.scene);
-    gridTexture.mainColor = new BABYLON.Color3(0.3, 0.6, 0.3);
-    gridTexture.lineColor = new BABYLON.Color3(0.2, 0.4, 0.2);
-    gridTexture.opacity = 0.98;
-    ground.material = gridTexture;
-
-    // Skybox
+    // Gradient skybox for depth
     const skybox = BABYLON.MeshBuilder.CreateBox('skybox', { size: 500 }, this.scene);
     const skyboxMaterial = new BABYLON.StandardMaterial('skyboxMat', this.scene);
     skyboxMaterial.backFaceCulling = false;
-    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-    skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-    skyboxMaterial.emissiveColor = new BABYLON.Color3(0.5, 0.7, 1);
+    skyboxMaterial.disableLighting = true;
+
+    // Create gradient texture for sky
+    const skyTexture = new BABYLON.DynamicTexture('skyTexture', 512, this.scene);
+    const skyCtx = skyTexture.getContext();
+    const gradient = skyCtx.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, '#87CEEB'); // Sky blue at top
+    gradient.addColorStop(0.5, '#B0D4E3'); // Lighter middle
+    gradient.addColorStop(1, '#E8F4F8'); // Almost white at horizon
+    skyCtx.fillStyle = gradient;
+    skyCtx.fillRect(0, 0, 512, 512);
+    skyTexture.update();
+
+    skyboxMaterial.emissiveTexture = skyTexture;
     skybox.material = skyboxMaterial;
+
+    // Add some environmental props
+    this.addEnvironmentProps();
+  }
+
+  addEnvironmentProps() {
+    // Add trees around the map edges
+    const treePositions = [
+      [-80, 0, -80], [-60, 0, -85], [-70, 0, -75],
+      [80, 0, 80], [75, 0, 85], [85, 0, 75],
+      [-80, 0, 80], [-85, 0, 75], [-75, 0, 85],
+      [80, 0, -80], [75, 0, -85], [85, 0, -75]
+    ];
+
+    treePositions.forEach(pos => {
+      const tree = window.modelFactory.createTree(2.5 + Math.random() * 1.5);
+      tree.position.set(pos[0], pos[1], pos[2]);
+      tree.rotation.y = Math.random() * Math.PI * 2;
+
+      // Add trees to shadow casters
+      tree.getChildMeshes().forEach(mesh => {
+        if (this.shadowGenerator) {
+          this.shadowGenerator.addShadowCaster(mesh);
+        }
+      });
+    });
+
+    // Add rocks
+    const rockPositions = [
+      [-50, 0, -50], [60, 0, -40], [-45, 0, 55], [70, 0, 65]
+    ];
+
+    rockPositions.forEach(pos => {
+      const rock = window.modelFactory.createRock(0.5 + Math.random() * 0.5);
+      rock.position.set(pos[0], 0, pos[2]);
+      rock.rotation.y = Math.random() * Math.PI * 2;
+
+      if (this.shadowGenerator) {
+        this.shadowGenerator.addShadowCaster(rock);
+      }
+    });
   }
 
   setupNetworkHandlers() {
@@ -113,6 +199,17 @@ class Game {
 
       // Create local player
       this.player = new PlayerController(this.scene, data.player);
+
+      // Add player to shadow casters
+      if (this.shadowGenerator && this.player.mesh) {
+        if (this.player.mesh.getChildMeshes) {
+          this.player.mesh.getChildMeshes().forEach(mesh => {
+            this.shadowGenerator.addShadowCaster(mesh);
+          });
+        } else {
+          this.shadowGenerator.addShadowCaster(this.player.mesh);
+        }
+      }
 
       // Set player camera as active
       if (this.player.camera) {
