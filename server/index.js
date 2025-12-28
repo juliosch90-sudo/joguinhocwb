@@ -39,16 +39,15 @@ async function start() {
     const gameServer = new GameServer();
     await gameServer.initialize();
 
-    // Start WebSocket server on the same port as HTTP
-    gameServer.start(config.SERVER_PORT);
-
-    // Start HTTP server for static files (same port as WebSocket)
+    // Start HTTP server first
     const HTTP_PORT = config.SERVER_PORT;
-    app.listen(HTTP_PORT, () => {
+    const httpServer = app.listen(HTTP_PORT, () => {
       console.log(`\n✓ HTTP server listening on port ${HTTP_PORT}`);
-      console.log(`✓ Access game at: http://localhost:${HTTP_PORT}`);
       console.log(`\n🎮 Server ready! Waiting for players...\n`);
     });
+
+    // Attach WebSocket to HTTP server
+    gameServer.start(httpServer);
 
     // Graceful shutdown
     process.on('SIGINT', () => {

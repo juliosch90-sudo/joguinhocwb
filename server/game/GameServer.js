@@ -62,8 +62,9 @@ class GameServer {
     console.log(`✓ Created map: ${name} (${size}x${size}) with ${map.monsters.length} monsters`);
   }
 
-  start(port) {
-    this.wss = new WebSocket.Server({ port });
+  start(httpServer) {
+    // Attach WebSocket to existing HTTP server
+    this.wss = new WebSocket.Server({ server: httpServer });
 
     this.wss.on('connection', (ws) => {
       this.handleConnection(ws);
@@ -74,7 +75,7 @@ class GameServer {
       this.update();
     }, 1000 / this.tickRate);
 
-    console.log(`✓ WebSocket server listening on port ${port}`);
+    console.log(`✓ WebSocket server attached to HTTP server`);
     console.log(`✓ Game loop running at ${this.tickRate} ticks/second`);
   }
 
