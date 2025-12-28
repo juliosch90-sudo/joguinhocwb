@@ -42,6 +42,14 @@ class Game {
       if (this.player) {
         this.player.update();
       }
+
+      // Update remote players interpolation
+      for (const remotePlayer of this.remotePlayers.values()) {
+        if (remotePlayer.interpolate) {
+          remotePlayer.interpolate();
+        }
+      }
+
       this.scene.render();
     });
 

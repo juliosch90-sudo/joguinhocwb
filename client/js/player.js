@@ -9,6 +9,17 @@ class PlayerController {
     this.moveSpeed = 5;
     this.isMoving = false;
 
+    // Movement physics
+    this.velocity = BABYLON.Vector3.Zero();
+    this.acceleration = 15; // Units per second squared
+    this.deceleration = 20; // Units per second squared
+    this.currentSpeed = 0;
+
+    // Client-side prediction
+    this.predictedPosition = null;
+    this.lastServerPosition = null;
+    this.lastServerUpdate = Date.now();
+
     this.createPlayer();
     this.createCamera();
     this.setupControls();
@@ -127,34 +138,76 @@ class PlayerController {
   }
 
   update() {
-    // WASD movement
-    let moveX = 0;
-    let moveZ = 0;
+    const deltaTime = this.scene.getEngine().getDeltaTime() / 1000; // Convert to seconds
 
-    if (this.keys['w']) moveZ = 1;
-    if (this.keys['s']) moveZ = -1;
-    if (this.keys['a']) moveX = -1;
-    if (this.keys['d']) moveX = 1;
+    // WASD movement input
+    let inputX = 0;
+    let inputZ = 0;
 
-    this.isMoving = (moveX !== 0 || moveZ !== 0);
+    if (this.keys['w']) inputZ = 1;
+    if (this.keys['s']) inputZ = -1;
+    if (this.keys['a']) inputX = -1;
+    if (this.keys['d']) inputX = 1;
 
+    // Normalize diagonal movement
+    const inputLength = Math.sqrt(inputX * inputX + inputZ * inputZ);
+    if (inputLength > 0) {
+      inputX /= inputLength;
+      inputZ /= inputLength;
+    }
+
+    this.isMoving = (inputLength > 0);
+
+    // Apply acceleration/deceleration
     if (this.isMoving) {
-      // Normalize diagonal movement
-      const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
-      if (length > 0) {
-        moveX /= length;
-        moveZ /= length;
+      // Accelerate
+      this.currentSpeed = Math.min(this.currentSpeed + this.acceleration * deltaTime, this.moveSpeed);
+
+      // Calculate target velocity
+      const targetVelocity = new BABYLON.Vector3(inputX, 0, inputZ).scale(this.currentSpeed);
+
+      // Smooth velocity change
+      this.velocity = BABYLON.Vector3.Lerp(this.velocity, targetVelocity, 0.2);
+
+      // Rotate player to face movement direction
+      if (this.velocity.length() > 0.1) {
+        const angle = Math.atan2(this.velocity.x, this.velocity.z);
+        const targetRotation = new BABYLON.Vector3(0, angle, 0);
+        this.mesh.rotation = BABYLON.Vector3.Lerp(this.mesh.rotation, targetRotation, 0.15);
       }
 
       // Send movement to server
       if (window.game && window.game.network) {
-        window.game.network.move('velocity', moveX, 0, moveZ);
+        window.game.network.move('velocity', inputX, 0, inputZ);
       }
-    } else if (Object.keys(this.keys).some(k => this.keys[k])) {
-      // Send stop movement
-      if (window.game && window.game.network) {
-        window.game.network.move('velocity', 0, 0, 0);
+    } else {
+      // Decelerate
+      this.currentSpeed = Math.max(this.currentSpeed - this.deceleration * deltaTime, 0);
+      this.velocity.scaleInPlace(Math.max(0, 1 - this.deceleration * deltaTime / this.moveSpeed));
+
+      // Stop when velocity is very small
+      if (this.velocity.length() < 0.01) {
+        this.velocity = BABYLON.Vector3.Zero();
+        this.currentSpeed = 0;
+
+        // Send stop to server once
+        if (window.game && window.game.network && !this.hasSentStop) {
+          window.game.network.move('velocity', 0, 0, 0);
+          this.hasSentStop = true;
+        }
       }
+    }
+
+    // Reset stop flag when moving
+    if (this.isMoving) {
+      this.hasSentStop = false;
+    }
+
+    // Client-side prediction: apply velocity locally
+    if (this.velocity.length() > 0.01) {
+      const movement = this.velocity.scale(deltaTime);
+      this.mesh.position.addInPlace(movement);
+      this.predictedPosition = this.mesh.position.clone();
     }
 
     // Update camera target
@@ -164,11 +217,32 @@ class PlayerController {
   }
 
   updatePosition(x, y, z) {
-    if (this.mesh) {
-      this.mesh.position.x = x;
-      this.mesh.position.y = y + 1;
-      this.mesh.position.z = z;
+    if (!this.mesh) return;
+
+    const serverPosition = new BABYLON.Vector3(x, y + 1, z);
+    this.lastServerPosition = serverPosition.clone();
+    this.lastServerUpdate = Date.now();
+
+    // Server reconciliation
+    const currentPosition = this.mesh.position;
+    const positionError = BABYLON.Vector3.Distance(currentPosition, serverPosition);
+
+    if (positionError > 2.0) {
+      // Large error: snap to server position (possible teleport or desync)
+      console.log(`Large position error detected: ${positionError.toFixed(2)} units. Snapping to server.`);
+      this.mesh.position = serverPosition;
+      this.velocity = BABYLON.Vector3.Zero();
+      this.currentSpeed = 0;
+    } else if (positionError > 0.5) {
+      // Medium error: smooth correction over time
+      const correctionSpeed = 0.3; // 30% correction per frame
+      this.mesh.position = BABYLON.Vector3.Lerp(currentPosition, serverPosition, correctionSpeed);
+    } else if (positionError > 0.1) {
+      // Small error: gentle correction
+      const correctionSpeed = 0.1; // 10% correction per frame
+      this.mesh.position = BABYLON.Vector3.Lerp(currentPosition, serverPosition, correctionSpeed);
     }
+    // If error < 0.1, trust client prediction completely
   }
 
   destroy() {
@@ -187,6 +261,12 @@ class RemotePlayer {
     this.data = playerData;
     this.mesh = null;
     this.nameTag = null;
+
+    // Smooth interpolation
+    this.targetPosition = null;
+    this.lastPosition = null;
+    this.interpolationAlpha = 0;
+    this.interpolationSpeed = 10; // Units per second
 
     this.createMesh();
   }
@@ -244,18 +324,50 @@ class RemotePlayer {
   update(data) {
     this.data = { ...this.data, ...data };
 
-    if (this.mesh) {
-      // Smooth interpolation
-      BABYLON.Animation.CreateAndStartAnimation(
-        'playerMove',
-        this.mesh,
-        'position',
-        60,
-        5,
-        this.mesh.position.clone(),
-        new BABYLON.Vector3(data.position.x, 1, data.position.z),
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    if (this.mesh && data.position) {
+      // Set target position
+      this.targetPosition = new BABYLON.Vector3(data.position.x, 1, data.position.z);
+
+      // Calculate rotation to face movement direction
+      if (this.lastPosition) {
+        const direction = this.targetPosition.subtract(this.mesh.position);
+        if (direction.length() > 0.1) {
+          const angle = Math.atan2(direction.x, direction.z);
+          const targetRotation = new BABYLON.Vector3(0, angle, 0);
+
+          // Smooth rotation
+          this.mesh.rotation = BABYLON.Vector3.Lerp(
+            this.mesh.rotation,
+            targetRotation,
+            0.15
+          );
+        }
+      }
+
+      this.lastPosition = this.mesh.position.clone();
+    }
+  }
+
+  interpolate() {
+    if (!this.mesh || !this.targetPosition) return;
+
+    const deltaTime = this.scene.getEngine().getDeltaTime() / 1000;
+    const distance = BABYLON.Vector3.Distance(this.mesh.position, this.targetPosition);
+
+    if (distance > 0.05) {
+      // Calculate interpolation speed based on distance
+      const speed = Math.min(this.interpolationSpeed, distance * 5);
+      const maxStep = speed * deltaTime;
+
+      // Move towards target
+      this.mesh.position = BABYLON.Vector3.Lerp(
+        this.mesh.position,
+        this.targetPosition,
+        Math.min(maxStep / distance, 1)
       );
+    } else {
+      // Snap to target when very close
+      this.mesh.position = this.targetPosition;
     }
   }
 
