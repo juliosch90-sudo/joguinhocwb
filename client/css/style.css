@@ -1,0 +1,455 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+/* Screens */
+.screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* Login Screen */
+#login-screen {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+.login-container {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 400px;
+}
+
+.login-container h1 {
+  font-size: 48px;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px #000;
+}
+
+.login-container h2 {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: #aaa;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  background: #333;
+  color: #fff;
+}
+
+.login-container button {
+  width: 100%;
+  padding: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.login-container button:hover {
+  background: #45a049;
+}
+
+.login-container .info {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #888;
+}
+
+/* Loading Screen */
+#loading-screen {
+  background: #000;
+}
+
+.loading-container {
+  text-align: center;
+}
+
+.loading-bar {
+  width: 300px;
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.loading-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+/* Game Screen */
+#game-screen {
+  display: block;
+}
+
+#renderCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+/* HUD */
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+#hud * {
+  pointer-events: auto;
+}
+
+.hud-panel {
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  padding: 15px;
+}
+
+/* Character Info */
+.character-info {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  min-width: 250px;
+}
+
+.character-name {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #4CAF50;
+}
+
+.level {
+  font-size: 14px;
+  color: #FFD700;
+  margin-bottom: 15px;
+}
+
+.stat-bar {
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 3px;
+}
+
+.bar {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: #222;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.health-bar .bar-fill {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+}
+
+.mana-bar .bar-fill {
+  background: linear-gradient(90deg, #2980b9, #3498db);
+}
+
+.xp-bar .bar-fill {
+  background: linear-gradient(90deg, #f39c12, #f1c40f);
+}
+
+.bar-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px #000;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.stat-name {
+  display: block;
+  font-size: 11px;
+  color: #888;
+}
+
+.stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* Minimap */
+.minimap {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 180px;
+}
+
+.map-title {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+#minimap-canvas {
+  display: block;
+  border-radius: 3px;
+}
+
+/* Skills */
+.skills {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.skill {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #444;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skill:hover {
+  border-color: #4CAF50;
+  transform: scale(1.05);
+}
+
+.skill.on-cooldown {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.skill-icon {
+  font-size: 30px;
+}
+
+.skill-key {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 10px;
+  color: #888;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.skill-cooldown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 3px;
+}
+
+/* Chat */
+.chat {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 13px;
+  margin-bottom: 10px;
+  padding-right: 5px;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #222;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.chat-message {
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.chat-message .player-name {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.chat-message.system {
+  color: #FFD700;
+  font-style: italic;
+}
+
+#chat-input {
+  width: 100%;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #444;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 13px;
+}
+
+#chat-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+/* Target Info */
+.target-info {
+  position: absolute;
+  top: 200px;
+  left: 20px;
+  min-width: 200px;
+}
+
+.target-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #e74c3c;
+  margin-bottom: 3px;
+}
+
+.target-level {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+
+/* Damage Numbers */
+#damage-numbers {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.damage-number {
+  position: absolute;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px #000;
+  animation: damageFloat 1s ease-out forwards;
+  pointer-events: none;
+}
+
+.damage-number.player-damage {
+  color: #e74c3c;
+}
+
+.damage-number.monster-damage {
+  color: #f39c12;
+}
+
+.damage-number.heal {
+  color: #2ecc71;
+}
+
+@keyframes damageFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+}

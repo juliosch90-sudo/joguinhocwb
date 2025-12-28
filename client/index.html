@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MMORPG - Browser Game</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Babylon.js -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen" class="screen active">
+    <div class="login-container">
+      <h1>🎮 MMORPG</h1>
+      <h2>Enter the World</h2>
+      <input type="text" id="character-name" placeholder="Character Name" maxlength="20" />
+      <button id="join-btn">Join Game</button>
+      <div class="info">
+        <p>Controls: WASD to move | 1-4 for skills | Click to attack</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <!-- HUD -->
+    <div id="hud">
+      <!-- Top Left - Character Info -->
+      <div class="hud-panel character-info">
+        <div class="character-name" id="char-name">Warrior</div>
+        <div class="level">Level <span id="char-level">1</span></div>
+
+        <div class="stat-bar">
+          <div class="stat-label">HP</div>
+          <div class="bar health-bar">
+            <div class="bar-fill" id="hp-bar" style="width: 100%"></div>
+            <div class="bar-text" id="hp-text">100/100</div>
+          </div>
+        </div>
+
+        <div class="stat-bar">
+          <div class="stat-label">MP</div>
+          <div class="bar mana-bar">
+            <div class="bar-fill" id="mp-bar" style="width: 100%"></div>
+            <div class="bar-text" id="mp-text">50/50</div>
+          </div>
+        </div>
+
+        <div class="stat-bar">
+          <div class="stat-label">XP</div>
+          <div class="bar xp-bar">
+            <div class="bar-fill" id="xp-bar" style="width: 0%"></div>
+            <div class="bar-text" id="xp-text">0/100</div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat">
+            <span class="stat-name">ATK</span>
+            <span class="stat-value" id="char-attack">10</span>
+          </div>
+          <div class="stat">
+            <span class="stat-name">DEF</span>
+            <span class="stat-value" id="char-defense">5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Right - Minimap -->
+      <div class="hud-panel minimap">
+        <div class="map-title">Lorencia Plains</div>
+        <canvas id="minimap-canvas" width="150" height="150"></canvas>
+      </div>
+
+      <!-- Bottom - Skills -->
+      <div class="hud-panel skills">
+        <div class="skill" id="skill-1" data-skill="1">
+          <div class="skill-icon">⚔️</div>
+          <div class="skill-key">1</div>
+          <div class="skill-cooldown" style="display: none;">3</div>
+        </div>
+        <div class="skill" id="skill-2" data-skill="2">
+          <div class="skill-icon">🛡️</div>
+          <div class="skill-key">2</div>
+          <div class="skill-cooldown" style="display: none;">10</div>
+        </div>
+        <div class="skill" id="skill-3" data-skill="3">
+          <div class="skill-icon">❤️</div>
+          <div class="skill-key">3</div>
+          <div class="skill-cooldown" style="display: none;">15</div>
+        </div>
+        <div class="skill" id="skill-4" data-skill="4">
+          <div class="skill-icon">⚡</div>
+          <div class="skill-key">4</div>
+          <div class="skill-cooldown" style="display: none;">20</div>
+        </div>
+      </div>
+
+      <!-- Bottom Right - Chat -->
+      <div class="hud-panel chat">
+        <div class="chat-messages" id="chat-messages"></div>
+        <input type="text" id="chat-input" placeholder="Press Enter to chat..." maxlength="100" />
+      </div>
+
+      <!-- Target Info -->
+      <div class="hud-panel target-info" id="target-info" style="display: none;">
+        <div class="target-name" id="target-name">Enemy</div>
+        <div class="target-level">Lv. <span id="target-level">1</span></div>
+        <div class="bar health-bar">
+          <div class="bar-fill" id="target-hp-bar" style="width: 100%"></div>
+          <div class="bar-text" id="target-hp-text">100/100</div>
+        </div>
+      </div>
+
+      <!-- Damage Numbers -->
+      <div id="damage-numbers"></div>
+    </div>
+
+    <!-- 3D Canvas -->
+    <canvas id="renderCanvas"></canvas>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="screen">
+    <div class="loading-container">
+      <h2>Loading...</h2>
+      <div class="loading-bar">
+        <div class="loading-fill" id="loading-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/network.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/monster.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
