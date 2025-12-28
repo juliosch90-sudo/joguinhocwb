@@ -1,7 +1,10 @@
 const WebSocket = require('ws');
 const Player = require('./Player');
 const GameMap = require('./Map');
-const db = require('../database/db');
+// Use in-memory DB for local testing, MySQL for production
+const db = process.env.NODE_ENV === 'production'
+  ? require('../database/db')
+  : require('../database/db-sqlite');
 const config = require('../config');
 
 class GameServer {
@@ -176,7 +179,7 @@ class GameServer {
     }
   }
 
-  handleAttack(ws, data) {
+  async handleAttack(ws, data) {
     const player = this.clients.get(ws);
     if (!player || !player.canAttack()) return;
 
