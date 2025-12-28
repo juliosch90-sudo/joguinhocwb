@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Input Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 50px;
+      background: #1a1a1a;
+      color: white;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simple Input Test</h1>
+  <p>If you can type here, the issue is with the main page JavaScript:</p>
+  <input type="text" id="test-input" placeholder="Type here..." autofocus>
+  <p id="output"></p>
+
+  <script>
+    console.log('Test page loaded');
+    const input = document.getElementById('test-input');
+    const output = document.getElementById('output');
+
+    input.addEventListener('input', (e) => {
+      output.textContent = 'You typed: ' + e.target.value;
+      console.log('Input value:', e.target.value);
+    });
+
+    input.addEventListener('focus', () => {
+      console.log('Input focused');
+    });
+
+    input.addEventListener('blur', () => {
+      console.log('Input blurred');
+    });
+  </script>
+</body>
+</html>
