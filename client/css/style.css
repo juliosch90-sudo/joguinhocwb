@@ -30,6 +30,7 @@ body {
 /* Login Screen */
 #login-screen {
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  z-index: 999;
 }
 
 .login-container {
@@ -38,6 +39,8 @@ body {
   border-radius: 10px;
   text-align: center;
   min-width: 400px;
+  position: relative;
+  z-index: 1000;
 }
 
 .login-container h1 {
@@ -61,6 +64,9 @@ body {
   margin-bottom: 20px;
   background: #333;
   color: #fff;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .login-container button {
