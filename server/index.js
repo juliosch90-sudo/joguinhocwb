@@ -39,11 +39,11 @@ async function start() {
     const gameServer = new GameServer();
     await gameServer.initialize();
 
-    // Start WebSocket server
+    // Start WebSocket server on the same port as HTTP
     gameServer.start(config.SERVER_PORT);
 
-    // Start HTTP server for static files
-    const HTTP_PORT = 8080;
+    // Start HTTP server for static files (same port as WebSocket)
+    const HTTP_PORT = config.SERVER_PORT;
     app.listen(HTTP_PORT, () => {
       console.log(`\n✓ HTTP server listening on port ${HTTP_PORT}`);
       console.log(`✓ Access game at: http://localhost:${HTTP_PORT}`);
