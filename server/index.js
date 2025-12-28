@@ -1,10 +1,12 @@
 const express = require('express');
 const path = require('path');
 const GameServer = require('./game/GameServer');
-// Use in-memory DB for local testing, MySQL for production
-const db = process.env.NODE_ENV === 'production'
-  ? require('./database/db')
+
+// Database selection: PostgreSQL (Render) > In-memory (local)
+const db = process.env.DATABASE_URL
+  ? require('./database/db-postgres')
   : require('./database/db-sqlite');
+
 const config = require('./config');
 
 const app = express();
