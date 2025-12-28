@@ -7,7 +7,7 @@ class NetworkClient {
     this.maxReconnectAttempts = 5;
   }
 
-  connect(url = 'ws://localhost:3000') {
+  connect(url = 'wss://joguinhocwb.onrender.com') {
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(url);
