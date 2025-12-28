@@ -23,6 +23,9 @@ class PlayerController {
     this.createPlayer();
     this.createCamera();
     this.setupControls();
+
+    // Initialize procedural animator
+    this.animator = new ProceduralAnimator(this.mesh, 'humanoid');
   }
 
   createPlayer() {
@@ -214,6 +217,11 @@ class PlayerController {
       this.predictedPosition = this.mesh.position.clone();
     }
 
+    // Update procedural animation
+    if (this.animator) {
+      this.animator.update(deltaTime, this.velocity);
+    }
+
     // Update camera target
     if (this.camera) {
       this.camera.target = this.mesh.position;
@@ -271,8 +279,12 @@ class RemotePlayer {
     this.lastPosition = null;
     this.interpolationAlpha = 0;
     this.interpolationSpeed = 10; // Units per second
+    this.velocity = BABYLON.Vector3.Zero();
 
     this.createMesh();
+
+    // Initialize animator
+    this.animator = new ProceduralAnimator(this.mesh, 'humanoid');
   }
 
   createMesh() {
@@ -364,6 +376,9 @@ class RemotePlayer {
     const deltaTime = this.scene.getEngine().getDeltaTime() / 1000;
     const distance = BABYLON.Vector3.Distance(this.mesh.position, this.targetPosition);
 
+    // Calculate velocity for animation
+    const oldPos = this.mesh.position.clone();
+
     if (distance > 0.05) {
       // Calculate interpolation speed based on distance
       const speed = Math.min(this.interpolationSpeed, distance * 5);
@@ -378,6 +393,14 @@ class RemotePlayer {
     } else {
       // Snap to target when very close
       this.mesh.position = this.targetPosition;
+    }
+
+    // Calculate velocity for animation
+    this.velocity = this.mesh.position.subtract(oldPos).scale(1 / deltaTime);
+
+    // Update procedural animation
+    if (this.animator) {
+      this.animator.update(deltaTime, this.velocity);
     }
   }
 

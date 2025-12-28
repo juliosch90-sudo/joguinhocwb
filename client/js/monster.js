@@ -6,6 +6,8 @@ class MonsterRenderer {
     this.mesh = null;
     this.nameTag = null;
     this.healthBar = null;
+    this.velocity = BABYLON.Vector3.Zero();
+    this.lastPosition = null;
 
     this.createMesh();
   }
@@ -60,6 +62,14 @@ class MonsterRenderer {
 
     this.createNameTag();
     this.createHealthBar();
+
+    // Initialize animator based on monster type
+    let animType = 'slime';
+    if (monsterType === 'wolf') animType = 'wolf';
+    else if (monsterType === 'orc') animType = 'orc';
+
+    this.animator = new ProceduralAnimator(this.mesh, animType);
+    this.lastPosition = this.mesh.position.clone();
   }
 
   createNameTag() {
@@ -138,6 +148,14 @@ class MonsterRenderer {
     this.data = { ...this.data, ...data };
 
     if (this.mesh && data.position) {
+      const targetPos = new BABYLON.Vector3(data.position.x, 0, data.position.z);
+
+      // Calculate velocity for animation
+      const deltaTime = this.scene.getEngine().getDeltaTime() / 1000;
+      if (this.lastPosition) {
+        this.velocity = targetPos.subtract(this.mesh.position).scale(1 / Math.max(deltaTime, 0.016));
+      }
+
       // Smooth movement
       BABYLON.Animation.CreateAndStartAnimation(
         'monsterMove',
@@ -146,9 +164,16 @@ class MonsterRenderer {
         60,
         5,
         this.mesh.position.clone(),
-        new BABYLON.Vector3(data.position.x, 1, data.position.z),
+        targetPos,
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
       );
+
+      this.lastPosition = targetPos.clone();
+
+      // Update animation
+      if (this.animator) {
+        this.animator.update(deltaTime, this.velocity);
+      }
     }
 
     // Update health bar
