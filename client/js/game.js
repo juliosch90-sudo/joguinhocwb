@@ -21,6 +21,10 @@ class Game {
     // Create scene
     this.createScene();
 
+    // Initialize VFX Manager
+    this.vfx = new VFXManager(this.scene);
+    window.vfxManager = this.vfx; // Make globally accessible
+
     // Initialize HUD
     this.hud = new HUD();
 
@@ -286,13 +290,59 @@ class Game {
 
     this.network.on('attack', (data) => {
       console.log('Attack:', data);
-      // Show damage number
-      // This would need screen position calculation
+
+      // Find target mesh
+      let targetMesh = null;
+      let targetPosition = null;
+
+      if (data.targetType === 'monster') {
+        const monster = this.monsters.get(data.targetId);
+        if (monster && monster.mesh) {
+          targetMesh = monster.mesh;
+          targetPosition = monster.mesh.position.clone();
+        }
+      } else if (data.targetType === 'player') {
+        if (this.player && this.player.data.id === data.targetId) {
+          targetMesh = this.player.mesh;
+          targetPosition = this.player.mesh.position.clone();
+        } else {
+          const remotePlayer = this.remotePlayers.get(data.targetId);
+          if (remotePlayer && remotePlayer.mesh) {
+            targetMesh = remotePlayer.mesh;
+            targetPosition = remotePlayer.mesh.position.clone();
+          }
+        }
+      }
+
+      if (targetPosition) {
+        targetPosition.y += 1; // Raise to torso height
+
+        // Visual effects
+        if (data.isCritical) {
+          this.vfx.createCriticalHit(targetPosition);
+        } else {
+          this.vfx.createAttackImpact(targetPosition);
+        }
+
+        this.vfx.createHitFlash(targetMesh);
+
+        // Slash effect from attacker to target
+        if (this.player && data.playerId === this.player.data.id) {
+          const direction = targetPosition.subtract(this.player.mesh.position);
+          direction.normalize();
+          this.vfx.createSlashEffect(this.player.mesh.position, direction);
+        }
+      }
     });
 
     this.network.on('monster_death', (data) => {
       const monster = this.monsters.get(data.monsterId);
       if (monster) {
+        // Death explosion effect
+        const deathPos = monster.mesh.position.clone();
+        deathPos.y += 0.5;
+        this.vfx.createDeathEffect(deathPos);
+
         monster.destroy();
         this.monsters.delete(data.monsterId);
       }
@@ -317,7 +367,43 @@ class Game {
 
     this.network.on('skill_used', (data) => {
       console.log('Skill used:', data);
-      // Visual effects would go here
+
+      // Find caster position
+      let casterPosition = null;
+
+      if (this.player && data.playerId === this.player.data.id) {
+        casterPosition = this.player.mesh.position.clone();
+      } else {
+        const remotePlayer = this.remotePlayers.get(data.playerId);
+        if (remotePlayer && remotePlayer.mesh) {
+          casterPosition = remotePlayer.mesh.position.clone();
+        }
+      }
+
+      if (casterPosition) {
+        casterPosition.y += 1;
+
+        // Different effects per skill
+        const skillColors = {
+          1: new BABYLON.Color3(1, 0.5, 0),    // Attack boost - orange
+          2: new BABYLON.Color3(0.3, 0.5, 1),  // Defense boost - blue
+          3: new BABYLON.Color3(0.2, 1, 0.3),  // Heal - green
+          4: new BABYLON.Color3(0.8, 0.2, 1)   // Special - purple
+        };
+
+        const color = skillColors[data.skillId] || new BABYLON.Color3(1, 1, 1);
+
+        // Cast effect
+        this.vfx.createCastEffect(casterPosition, color);
+
+        // If heal skill, show heal effect
+        if (data.skillId === 3) {
+          this.vfx.createHealEffect(casterPosition);
+        }
+
+        // Update cooldown in HUD
+        this.hud.setSkillCooldown(data.skillId, 3000); // 3 second cooldown
+      }
     });
   }
 
